@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Control de Insumos - Línea de Base Subacuática</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; width: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            color: #1a1a1a;
+            line-height: 1.6;
+            padding: 8px;
+            overflow-x: hidden;
+        }
+        .container { max-width: 420px; margin: 0 auto; }
+        .header {
+            background: linear-gradient(135deg, #0F6E56 0%, #1D9E75 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .header h1 { font-size: 18px; font-weight: 500; margin-bottom: 6px; }
+        .header-subtitle { font-size: 12px; opacity: 0.9; }
+        .setup-form {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #1a1a1a;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 0.5px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            font-family: inherit;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        textarea { min-height: 70px; resize: vertical; }
+        select { background: white; cursor: pointer; }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #0F6E56;
+            box-shadow: 0 0 0 2px rgba(15, 110, 86, 0.1);
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: #0F6E56;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            touch-action: manipulation;
+            margin-top: 8px;
+        }
+        .btn-primary:active { background: #0a4f3f; transform: scale(0.98); }
+        .btn-secondary {
+            width: 100%;
+            padding: 12px;
+            background: white;
+            color: #0F6E56;
+            border: 1px solid #0F6E56;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .btn-secondary:active { background: #f0f0f0; }
+        #setupScreen { display: block; }
+        #dashboard { display: none; }
+        .hidden { display: none !important; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .stat-card {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-label { font-size: 11px; color: #666; margin-bottom: 6px; }
+        .stat-value { font-size: 24px; font-weight: 600; color: #0F6E56; }
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        .progress-fill { height: 100%; background: #0F6E56; transition: width 0.3s; }
+        .component-card {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 0.5px solid #ddd;
+        }
+        .component-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .component-name { font-size: 14px; font-weight: 500; }
+        .component-status {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-progress { background: #cce5ff; color: #004085; }
+        .status-complete { background: #d4edda; color: #155724; }
+        .component-meta { font-size: 12px; color: #666; margin-bottom: 8px; }
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .button-group button { padding: 10px; font-size: 13px; margin: 0; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            padding: 8px;
+            overflow-y: auto;
+        }
+        .modal.active { display: block; }
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            max-width: 420px;
+            margin: 8px auto;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            border-bottom: 0.5px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .modal-title { font-size: 16px; font-weight: 600; }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .insumo-item {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border-left: 3px solid #0F6E56;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .insumo-item-content { flex: 1; }
+        .insumo-type { font-size: 11px; background: #e8f5e9; color: #1b5e20; padding: 2px 6px; border-radius: 3px; margin-bottom: 4px; display: inline-block; }
+        .insumo-text { font-size: 13px; margin-bottom: 4px; }
+        .insumo-time { font-size: 11px; color: #999; }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #d32f2f;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px 8px;
+            flex-shrink: 0;
+        }
+        .section-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #1a1a1a; }
+        .project-info { background: white; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; }
+        .project-info p { margin-bottom: 4px; }
+        .project-info strong { color: #0F6E56; }
+        .empty-state { text-align: center; padding: 16px; color: #999; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- SETUP -->
+        <div id="setupScreen">
+            <div class="header">
+                <h1>Línea de Base</h1>
+                <div class="header-subtitle">Patrimonio Cultural Subacuático</div>
+            </div>
+            <div class="setup-form">
+                <div class="section-title" style="text-align: center; margin-bottom: 16px;">Nuevo Proyecto</div>
+                <div class="form-group">
+                    <label for="projectName">Nombre del Proyecto</label>
+                    <input type="text" id="projectName" placeholder="Ej: Terminal Gas Caldera" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="projectZone">Zona de Estudio</label>
+                    <input type="text" id="projectZone" placeholder="Ej: Caleta Obispo" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="projectRegion">Comuna/Región</label>
+                    <input type="text" id="projectRegion" placeholder="Ej: Caldera, Atacama" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="projectTeam">Equipo en Terreno</label>
+                    <textarea id="projectTeam" placeholder="Ej: Diego Carabias, Renato Simonetti, Jaime Widow"></textarea>
+                </div>
+                <button type="button" id="btnStart" class="btn-primary">Comenzar Registro</button>
+            </div>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="dashboard" class="hidden">
+            <div class="header">
+                <h1 id="displayProjectName">Línea de Base</h1>
+                <div class="header-subtitle" id="displayZone"></div>
+            </div>
+            <div class="project-info">
+                <p><strong>Zona:</strong> <span id="infoZone"></span></p>
+                <p><strong>Equipo:</strong> <span id="infoTeam"></span></p>
+                <p><strong>Inicio:</strong> <span id="infoDate"></span></p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Insumos</div>
+                    <div class="stat-value" id="completedCount">0</div>
+                    <div class="progress-bar"><div class="progress-fill" id="completedBar" style="width: 0%;"></div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Completitud</div>
+                    <div class="stat-value" id="totalPercent">0%</div>
+                    <div class="progress-bar"><div class="progress-fill" id="totalBar" style="width: 0%;"></div></div>
+                </div>
+            </div>
+            <div class="section-title">Componentes</div>
+            <div id="componentsContainer"></div>
+            <button type="button" id="btnExport" class="btn-secondary">Exportar Datos</button>
+            <button type="button" id="btnNew" class="btn-secondary">Nuevo Proyecto</button>
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal" id="insumoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Insumos</div>
+                <button type="button" class="close-btn" id="btnCloseModal">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="insumoType">Tipo de Insumo</label>
+                <select id="insumoType">
+                    <option value="fotografia">Fotografía</option>
+                    <option value="dato">Dato/Medición</option>
+                    <option value="observacion">Observación</option>
+                    <option value="archivo">Archivo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="insumoDescription">Descripción</label>
+                <textarea id="insumoDescription" placeholder="Describa el insumo, ubicación, profundidad, etc."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="insumoNotes">Notas (opcional)</label>
+                <textarea id="insumoNotes" placeholder="Notas adicionales de terreno"></textarea>
+            </div>
+            <button type="button" id="btnAddInsumo" class="btn-primary">Agregar Insumo</button>
+            <div style="margin-top: 14px; border-top: 0.5px solid #ddd; padding-top: 10px;">
+                <div class="section-title">Registrados</div>
+                <div id="insumosList"></div>
+                <div id="emptyInsumos" class="empty-state">Sin insumos registrados aún</div>
+            </div>
+            <button type="button" class="btn-secondary" id="btnCloseModal2">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        const componentes = [
+            {id: 'prospeccion', nombre: 'Prospección Submarina', meta: '5 insumos esperados'},
+            {id: 'cartografia', nombre: 'Cartografía/GPS', meta: '4 insumos esperados'},
+            {id: 'fotografia', nombre: 'Fotografía Subacuática', meta: '20 insumos esperados'},
+            {id: 'sitios', nombre: 'Documentación de Sitios', meta: '8 insumos esperados'},
+            {id: 'geofisica', nombre: 'Análisis Geofísico', meta: '3 insumos esperados'},
+            {id: 'ambiental', nombre: 'Análisis Ambiental', meta: '6 insumos esperados'}
+        ];
+        
+        let currentProject = null;
+        let currentComponent = null;
+
+        document.getElementById('btnStart').addEventListener('click', initializeProject);
+        document.getElementById('btnExport').addEventListener('click', exportData);
+        document.getElementById('btnNew').addEventListener('click', resetProject);
+        document.getElementById('btnCloseModal').addEventListener('click', closeModal);
+        document.getElementById('btnCloseModal2').addEventListener('click', closeModal);
+        document.getElementById('btnAddInsumo').addEventListener('click', addInsumo);
+
+        function initializeProject() {
+            const name = document.getElementById('projectName').value.trim();
+            const zone = document.getElementById('projectZone').value.trim();
+            const region = document.getElementById('projectRegion').value.trim();
+            const team = document.getElementById('projectTeam').value.trim();
+            
+            if (!name || !zone) {
+                alert('⚠️ Complete Nombre y Zona');
+                return;
+            }
+            
+            currentProject = {
+                name, zone, region, team,
+                date: new Date().toLocaleDateString('es-CL'),
+                insumos: {}
+            };
+            
+            componentes.forEach(c => { currentProject.insumos[c.id] = []; });
+            saveProject();
+            showDashboard();
+        }
+
+        function saveProject() {
+            localStorage.setItem('currentProject', JSON.stringify(currentProject));
+        }
+
+        function loadProject() {
+            const saved = localStorage.getItem('currentProject');
+            if (saved) {
+                try {
+                    currentProject = JSON.parse(saved);
+                    return true;
+                } catch (e) {
+                    console.error('Error loading project:', e);
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        function showDashboard() {
+            document.getElementById('setupScreen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            
+            document.getElementById('displayProjectName').textContent = currentProject.name;
+            document.getElementById('displayZone').textContent = currentProject.zone;
+            document.getElementById('infoZone').textContent = currentProject.zone + (currentProject.region ? `, ${currentProject.region}` : '');
+            document.getElementById('infoTeam').textContent = currentProject.team || '-';
+            document.getElementById('infoDate').textContent = currentProject.date;
+            
+            renderComponents();
+            updateStats();
+        }
+
+        function renderComponents() {
+            const container = document.getElementById('componentsContainer');
+            container.innerHTML = '';
+            
+            componentes.forEach(comp => {
+                const insumos = currentProject.insumos[comp.id] || [];
+                const completed = insumos.length;
+                const total = parseInt(comp.meta.split(' ')[0]) || 5;
+                const percent = Math.round((completed / total) * 100);
+                
+                let status = 'pending', statusText = 'Sin iniciar';
+                if (percent > 0 && percent < 100) { status = 'progress'; statusText = `${percent}%`; }
+                else if (percent >= 100) { status = 'complete'; statusText = 'Completo'; }
+                
+                const card = document.createElement('div');
+                card.className = 'component-card';
+                card.innerHTML = `
+                    <div class="component-header">
+                        <div class="component-name">${comp.nombre}</div>
+                        <div class="component-status status-${status}">${statusText}</div>
+                    </div>
+                    <div class="component-meta">${completed}/${total} insumos</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${percent}%;"></div>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" class="btn-primary">Registrar</button>
+                        <button type="button" class="btn-secondary">Ver</button>
+                    </div>
+                `;
+                
+                const btnRegister = card.querySelector('.button-group .btn-primary');
+                const btnView = card.querySelector('.button-group .btn-secondary');
+                
+                btnRegister.addEventListener('click', () => openComponent(comp.id));
+                btnView.addEventListener('click', () => openComponent(comp.id));
+                
+                container.appendChild(card);
+            });
+        }
+
+        function updateStats() {
+            let totalInsumos = 0, totalEsperado = 0;
+            componentes.forEach(comp => {
+                const insumos = currentProject.insumos[comp.id] || [];
+                totalInsumos += insumos.length;
+                totalEsperado += parseInt(comp.meta.split(' ')[0]) || 5;
+            });
+            
+            const percent = totalEsperado > 0 ? Math.round((totalInsumos / totalEsperado) * 100) : 0;
+            document.getElementById('completedCount').textContent = totalInsumos;
+            document.getElementById('totalPercent').textContent = percent + '%';
+            document.getElementById('completedBar').style.width = Math.min(((totalInsumos / (totalEsperado * 0.5)) * 100), 100) + '%';
+            document.getElementById('totalBar').style.width = percent + '%';
+        }
+
+        function openComponent(componentId) {
+            currentComponent = componentId;
+            const comp = componentes.find(c => c.id === componentId);
+            document.getElementById('modalTitle').textContent = comp.nombre;
+            document.getElementById('insumoType').value = 'fotografia';
+            document.getElementById('insumoDescription').value = '';
+            document.getElementById('insumoNotes').value = '';
+            renderInsumosList();
+            document.getElementById('insumoModal').classList.add('active');
+        }
+
+        function addInsumo() {
+            const type = document.getElementById('insumoType').value;
+            const desc = document.getElementById('insumoDescription').value.trim();
+            const notes = document.getElementById('insumoNotes').value.trim();
+            
+            if (!desc) {
+                alert('⚠️ Ingrese una descripción');
+                return;
+            }
+            
+            const insumo = {
+                id: Date.now(),
+                type,
+                description: desc,
+                notes,
+                date: new Date().toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})
+            };
+            
+            if (!currentProject.insumos[currentComponent]) {
+                currentProject.insumos[currentComponent] = [];
+            }
+            
+            currentProject.insumos[currentComponent].push(insumo);
+            saveProject();
+            renderInsumosList();
+            updateStats();
+            renderComponents();
+            
+            document.getElementById('insumoDescription').value = '';
+            document.getElementById('insumoNotes').value = '';
+        }
+
+        function renderInsumosList() {
+            const list = document.getElementById('insumosList');
+            const empty = document.getElementById('emptyInsumos');
+            const insumos = currentProject.insumos[currentComponent] || [];
+            
+            if (insumos.length === 0) {
+                list.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            
+            empty.style.display = 'none';
+            list.innerHTML = '';
+            
+            insumos.forEach(ins => {
+                const item = document.createElement('div');
+                item.className = 'insumo-item';
+                
+                const content = document.createElement('div');
+                content.className = 'insumo-item-content';
+                content.innerHTML = `
+                    <div class="insumo-type">${ins.type}</div>
+                    <div class="insumo-text">${ins.description}</div>
+                    ${ins.notes ? `<div style="font-size: 12px; color: #666; margin-top: 4px;">"${ins.notes}"</div>` : ''}
+                    <div class="insumo-time">${ins.date}</div>
+                `;
+                
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'delete-btn';
+                delBtn.innerHTML = '🗑️';
+                delBtn.addEventListener('click', () => deleteInsumo(ins.id));
+                
+                item.appendChild(content);
+                item.appendChild(delBtn);
+                list.appendChild(item);
+            });
+        }
+
+        function deleteInsumo(id) {
+            const insumos = currentProject.insumos[currentComponent];
+            const idx = insumos.findIndex(i => i.id === id);
+            if (idx !== -1) {
+                insumos.splice(idx, 1);
+                saveProject();
+                renderInsumosList();
+                updateStats();
+                renderComponents();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('insumoModal').classList.remove('active');
+            currentComponent = null;
+        }
+
+        function exportData() {
+            const data = { 
+                proyecto: currentProject.name, 
+                zona: currentProject.zone, 
+                region: currentProject.region, 
+                fecha: currentProject.date, 
+                insumos: currentProject.insumos 
+            };
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `linea-base-${currentProject.name.replace(/\s/g, '-')}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function resetProject() {
+            if (confirm('¿Descartar proyecto e iniciar uno nuevo?')) {
+                localStorage.removeItem('currentProject');
+                currentProject = null;
+                document.getElementById('setupScreen').classList.remove('hidden');
+                document.getElementById('dashboard').classList.add('hidden');
+                document.getElementById('projectName').value = '';
+                document.getElementById('projectZone').value = '';
+                document.getElementById('projectRegion').value = '';
+                document.getElementById('projectTeam').value = '';
+            }
+        }
+
+        if (loadProject()) { showDashboard(); }
+    </script>
+</body>
+</html>
